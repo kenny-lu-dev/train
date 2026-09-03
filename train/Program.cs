@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO; // 提供檔案與資料夾操作的功能
-using OfficeOpenXml; // EPPlus 函式庫，用於處理 Excel 檔案
+﻿using OfficeOpenXml; // EPPlus 函式庫，用於處理 Excel 檔案
 
 public class Program
 {
@@ -10,7 +8,7 @@ public class Program
         {
             // 提示使用者輸入資料夾路徑
             Console.WriteLine("請輸入資料夾路徑:");
-            string inputFolder = Console.ReadLine(); // 接收使用者輸入的資料夾路徑
+            string? inputFolder = Console.ReadLine(); // 接收使用者輸入的資料夾路徑
 
             // 檢查輸入的資料夾路徑是否為空或不存在
             if (string.IsNullOrWhiteSpace(inputFolder) || !Directory.Exists(inputFolder))
@@ -57,15 +55,33 @@ public class Program
             using (var package = new ExcelPackage(new FileInfo(excelFile)))
             {
                 // 讀取 Excel 文件的第一個工作表
-                var worksheet = package.Workbook.Worksheets[0];
+                var worksheet = package.Workbook.Worksheets.Count > 0
+                    ? package.Workbook.Worksheets[0]
+                    : null;
+                // 若檔案中沒有任何工作表，顯示提示並結束
+                if (worksheet == null)
+                {
+                    Console.WriteLine("Excel 檔案中沒有任何工作表。");
+                    return;
+                }
+
                 // 定義輸出文字檔案的路徑
                 string txtFilePath = Path.Combine(outputFolder, "output.txt");
+
+                // 事先取得資料列數，避免迴圈條件每次重新計算使用範圍；空白工作表時為 0
+                int rowCount = worksheet.Dimension?.Rows ?? 0;
+
+                // 統計複製與遺漏的檔案數量
+                int copiedCount = 0;
+                int missingCount = 0;
+                // 僅保留前幾個遺漏檔案名稱，供最後摘要顯示
+                var missingFiles = new List<string>();
 
                 // 開啟文字檔案寫入器
                 using (var writer = new StreamWriter(txtFilePath))
                 {
                     // 從第二行開始迭代 Excel 的資料列（跳過標題行）
-                    for (int row = 2; row <= worksheet.Dimension.Rows; row++)
+                    for (int row = 2; row <= rowCount; row++)
                     {
                         try
                         {
@@ -82,24 +98,44 @@ public class Program
                             {
                                 // 如果來源檔案存在，複製並重命名
                                 File.Copy(sourcePath, destinationPath, true);
-                                Console.WriteLine($"複製並重命名: {sourcePath} -> {destinationPath}");
+                                copiedCount++;
                             }
                             else
                             {
-                                // 如果來源檔案不存在，記錄錯誤
-                                Console.WriteLine($"找不到對應的 WAV 檔案: {sourcePath}");
-                                //LogError(outputFolder, $"行 {row}: 找不到對應的 WAV 檔案 - {sourcePath}");
+                                // 如果來源檔案不存在，累計遺漏數並保留前幾個檔名
+                                missingCount++;
+                                if (missingFiles.Count < 10)
+                                {
+                                    missingFiles.Add(sourcePath);
+                                }
                             }
 
                             // 將文本數據寫入輸出的文字檔案
                             writer.WriteLine($"{textData}");
+
+                            // 每處理 100 列才顯示一次進度，避免逐列輸出拖慢效能
+                            if ((row - 1) % 100 == 0)
+                            {
+                                Console.WriteLine($"已處理 {row - 1} 列（複製 {copiedCount}，遺漏 {missingCount}）...");
+                            }
                         }
                         catch (Exception fileEx)
                         {
-                            // 捕捉處理單行資料時的錯誤，並記錄至日誌
+                            // 捕捉處理單行資料時的錯誤
                             Console.WriteLine($"行 {row} 處理失敗: {fileEx.Message}");
                             //LogError(outputFolder, $"行 {row} 處理失敗: {fileEx.Message}");
                         }
+                    }
+                }
+
+                // 顯示處理結果摘要
+                Console.WriteLine($"複製完成：共複製 {copiedCount} 個檔案，遺漏 {missingCount} 個檔案。");
+                if (missingCount > 0)
+                {
+                    Console.WriteLine($"以下為前 {missingFiles.Count} 個找不到的 WAV 檔案：");
+                    foreach (var missing in missingFiles)
+                    {
+                        Console.WriteLine($"  - {missing}");
                     }
                 }
             }
