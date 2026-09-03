@@ -2,7 +2,6 @@
 using System.IO;
 using Xunit; // xUnit 是用於單元測試與整合測試的框架
 using OfficeOpenXml; // EPPlus 函式庫，用於處理 Excel 檔案
-using Microsoft.VisualStudio.TestPlatform.TestHost; // 測試主機（可選）
 
 // 定義測試類別
 public class ProgramIntegrationTests
@@ -14,6 +13,9 @@ public class ProgramIntegrationTests
         // -------------------
         // Arrange: 設置測試環境
         // -------------------
+
+        // 設定 EPPlus 非商業許可，避免建立 ExcelPackage 時拋出授權例外
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
         // 定義測試用的資料夾路徑
         string testFolder = Path.Combine(Directory.GetCurrentDirectory(), "TestInput");
