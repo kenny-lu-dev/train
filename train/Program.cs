@@ -88,7 +88,6 @@ public class Program
                             {
                                 // 如果來源檔案不存在，記錄錯誤
                                 Console.WriteLine($"找不到對應的 WAV 檔案: {sourcePath}");
-                                //LogError(outputFolder, $"行 {row}: 找不到對應的 WAV 檔案 - {sourcePath}");
                             }
 
                             // 將文本數據寫入輸出的文字檔案
@@ -96,9 +95,8 @@ public class Program
                         }
                         catch (Exception fileEx)
                         {
-                            // 捕捉處理單行資料時的錯誤，並記錄至日誌
+                            // 捕捉處理單行資料時的錯誤
                             Console.WriteLine($"行 {row} 處理失敗: {fileEx.Message}");
-                            //LogError(outputFolder, $"行 {row} 處理失敗: {fileEx.Message}");
                         }
                     }
                 }
@@ -108,30 +106,10 @@ public class Program
         }
         catch (Exception ex)
         {
-            // 捕捉處理資料夾過程中的錯誤並記錄至日誌
+            // 捕捉處理資料夾過程中的錯誤
             Console.WriteLine($"資料夾處理過程中發生錯誤: {ex.Message}");
-            //LogError(outputFolder, $"資料夾處理過程中發生錯誤: {ex.Message}");
         }
     }
 
-    // 日誌記錄方法，用於將錯誤訊息記錄到日誌檔案中
-    //private static void LogError(string outputFolder, string message)
-    //{
-    //    try
-    //    {
-    //        // 定義錯誤日誌檔案的路徑
-    //        string errorLogPath = Path.Combine(outputFolder, "error.log");
-    //        // 開啟日誌檔案的寫入器（追加模式）
-    //        using (var writer = new StreamWriter(errorLogPath, true))
-    //        {
-    //            // 寫入錯誤訊息與時間戳
-    //            writer.WriteLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}");
-    //        }
-    //    }
-    //    catch (Exception logEx)
-    //    {
-    //        // 捕捉日誌寫入過程中的錯誤
-    //        Console.WriteLine($"無法寫入錯誤日誌: {logEx.Message}");
-    //    }
 }
 
